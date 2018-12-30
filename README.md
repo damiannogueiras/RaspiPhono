@@ -8,28 +8,48 @@
 
 ### Dependencies
 
-`pip3 install pygame`
+Install [pygame](https://www.pygame.org/)
+
+`$ pip3 install pygame`
+
 
 ---
 
 ### Setup
 
-* Config I2S
+* Config I2S <em>[(more info)](https://learn.adafruit.com/adafruit-max9857-i2s-class-d-mono-amp/raspberry-pi-usage)</em>
 
-`curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash`
+`$curl -sS https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/i2samp.sh | bash`
 
-<em>[more info](https://learn.adafruit.com/adafruit-max9857-i2s-class-d-mono-amp/raspberry-pi-usage)</em>
 
-* Setup powerup and powerdown button, pin 3(SCL)
+
+* Setup powerup and powerdown button, pin 3(SCL) <em>[(more info)](https://www.stderr.nl/Blog/Hardware/RaspberryPi/PowerButton.html)</em>
 
 Add in the file `/boot/config.txt`: `dtoverlay=gpio-shutdown`
 
-<em>[more info](https://www.stderr.nl/Blog/Hardware/RaspberryPi/PowerButton.html)</em>
 
-*  Config startup script
+*  If you want start the script in the init
 
-Copy ``raspiphonoinit.sh`` to init directory
+Copy `raspiphonoinit` to init directory
 
-`$ sudo cp raspiphonoinit.sh /etc/init.d`
+`$ sudo cp RaspiPhono/raspiphonoinit /etc/init.d`
+
+Add execute permission
+
+`$ sudo chmod 755 /etc/init.d/raspiphonoinit`
 
 `$ sudo update-rc.d raspiphonoinit defaults`
+
+---
+
+### Clone and run
+
+Clone the code
+
+`$ git clone https://github.com/damiannogueiras/RaspiPhono.git`
+
+And run
+
+`$ cd RaspiPhono`
+
+`$ python3 gramophono.py`
