@@ -2,6 +2,7 @@ import RPi.GPIO as IO
 import time
 import os
 import pygame
+import pygame.midi
 
 IO.setwarnings(False)
 IO.setmode(IO.BCM)
@@ -9,10 +10,20 @@ IO.setmode(IO.BCM)
 # button to add time when crank turn
 buttonTimePin = 4  # fourth pin
 # button to change folder music
-buttonDiscPin = 17  # sixth pin
+buttonDiscPin = 14  # fourth pin
+# motor control, turntable
+motorPin = 23
+
+# amp 98357A
+# DIN pin 21
+# BCLK pin 18
+# LRCLK pin 19
 
 IO.setup(buttonTimePin, IO.IN, IO.PUD_UP)
 IO.setup(buttonDiscPin, IO.IN, IO.PUD_UP)
+IO.setup(motorPin, IO.OUT)
+# 60Hz it's a good frequency for this motor
+turntable = IO.PWM(motorPin, 80)
 
 current_time = 0
 finish_time = 0
@@ -23,6 +34,7 @@ index_vinyls = 0
 index_songs = 0
 # boolean to enable play music
 isRotating = False
+
 
 # save the list of directory and songs
 # directories -> vinyls
@@ -55,10 +67,11 @@ def recopile_vinyls():
 # every crank turn add one min
 def addMin(pin):
     global finish_time
+    global current_time
     # local var, to compare at the crank turn moment
     current_time = time.time()
-    # every turn add 5 scs
-    seconds = 60
+    # every turn add x scs
+    seconds = 20
     # if the gramaphono is rotating
     if finish_time > current_time:
         finish_time = finish_time + seconds
@@ -74,8 +87,9 @@ def changeDisc(pin):
     global index_vinyls
     global index_songs
     print("Change Disc")
-    # first stop the music
-    pygame.mixer.music.stop()
+    # first stop the music if is playing
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.stop()
     # the next vinyl
     if index_vinyls < len(vinyls) - 1:
         index_vinyls += 1
@@ -96,20 +110,14 @@ def loadSong():
     else:
         pygame.mixer.music.stop()
 
-# events for the buttons
-IO.add_event_detect(buttonTimePin, IO.RISING, addMin, bouncetime=200)
-IO.add_event_detect(buttonDiscPin, IO.RISING, changeDisc, bouncetime=200)
-
-# save the files at the array
-recopile_vinyls()
-
-# print(vinyls)
-# print(all_songs)
 
 def main():
-    """this function is called when the program starts.
-       it initializes everything it needs, then runs in
-       a loop until the function returns."""
+    """this function is called when the program starts."""
+
+    # save the files at the array
+    recopile_vinyls()
+    # print(vinyls)
+    # print(all_songs)
 
     # Initialize Everything
     # init display
@@ -119,29 +127,39 @@ def main():
     freq = 44100  # audio CD quality
     bitsize = -16  # unsigned 16 bit
     channels = 1  # 1 is mono, 2 is stereo
-    buffer = 1024  # number of samples (experiment to get right sound)
+    buffer = 2048  # number of samples (experiment to get right sound)
     pygame.mixer.init(freq, bitsize, channels, buffer)
     pygame.mixer.music.set_volume(0.5)
     # init pygame
     pygame.init()
+
+    # events for the buttons
+    IO.add_event_detect(buttonTimePin, IO.RISING, addMin, bouncetime=200)
+    IO.add_event_detect(buttonDiscPin, IO.RISING, changeDisc, bouncetime=200)
+
     # Main Loop
     going = True
     while going:
         time.sleep(1)
         current_time = time.time()
         if finish_time > current_time:
-            # print("REMAIN:" + str(int(finish_time) - int(time.time())))
+            print("REMAIN:" + str(int(finish_time) - int(time.time())))
             isRotating = True
+            # speed
+            turntable.start(40)
         else:
             # print("STOP")
             isRotating = False
             # stop music
             pygame.mixer.music.stop()
+            turntable.stop()
+
         # print("Disc:" + str(vinyls[index_vinyls]))
         if (not pygame.mixer.music.get_busy()) and isRotating:
             loadSong()
 
     pygame.quit()
+
 
 # this calls the 'main' function when this script is executed
 if __name__ == '__main__':
